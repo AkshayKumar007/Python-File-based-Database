@@ -12,16 +12,37 @@ json_size_limit_error = MemoryError('JSON size exceeded 16KB')
 db_size_limit_error = MemoryError('File size reached 1GB. Try creating a new Database instance')
 
 class Database:
+    # data members = db, filename, dthread, auto_dump, loco
     def __init__(self, filepath) -> None:
         super().__init__()
-        if filepath == None:
-            pass
-        else:
-            pass
+        self.filename = filepath
+
+    def open_db(self): # opens file containg db
+        try:
+            self.db = json.load(open(self.filename, 'w+'))   
+        except ValueError as e:
+            if path.getsize(self.filename) == 0:
+                self.db = {}
+            else:
+                raise TypeError('File is corrupted or not in JSON format.')
+
+    def read(self): # read  data
+        pass
     
-    def read(self, key):
-        with open(self.filename, 'r') as f:
-            data = json.load(f)
+    def read_key(self, key):
+        pass
+
+    def bulk_write(self, liz):
+        pass
+
+    def write(self, data):
+        pass
+
+    def delete_key(self, key):
+        pass
+
+    def delete_db(self):
+        pass
 
 def create_db(dir_path=None):
     file_path = None
@@ -32,6 +53,7 @@ def create_db(dir_path=None):
             os.makedirs(dir_path)
             if dir_path[-1] != '/':
                 dir_path += '/'
+
             file_path = dir_path + 'database.txt'
             open(file_path, 'a').close()
 
@@ -43,5 +65,7 @@ def open_db(file_path):
         db = Database(filepath=file_path)
         return db
     else:
-        return FileNotFoundError()
+        raise FileNotFoundError()
     
+# refernces
+# https://stackoverflow.com/questions/2104080/how-can-i-check-file-size-in-python
