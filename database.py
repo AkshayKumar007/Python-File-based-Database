@@ -1,11 +1,11 @@
 import os
-import sys
-import time
 import json
-import queue
+import fcntl  # for UNIX only
+import atexit
 
 from os import path
 from threading import Thread
+
 
 key_char_limit_error = TypeError('Key length shall not exceed 32 characters')
 json_size_limit_error = MemoryError('JSON size exceeded 16KB')
@@ -16,15 +16,27 @@ class Database:
     def __init__(self, filepath) -> None:
         super().__init__()
         self.filename = filepath
+        self.file_no = open(filepath).fileno()
+        try:
+            fcntl.lockf(self.file_no, fcntl.LOCK_EX)
+            atexit.register(self.close_db)
+        except OSError as e:
+            raise PermissionError('File is being used by other process(es)')
 
     def open_db(self): # opens file containg db
         try:
-            self.db = json.load(open(self.filename, 'w+'))   
+            self.f_obj = open(self.filename, 'w+')
+            self.db = json.load(self.f_obj)   
         except ValueError as e:
             if path.getsize(self.filename) == 0:
                 self.db = {}
             else:
-                raise TypeError('File is corrupted or not in JSON format.')
+                raise ValueError('File is corrupted or not in JSON format.')
+    
+    def close_db(self): # for closing file and removing lock on file by process
+        del self.db
+        fcntl.lockf(self.file_no, fcntl.LOCK_UN)
+        self.f_obj.close()
 
     def read(self): # read  data
         pass
@@ -57,13 +69,13 @@ def create_db(dir_path=None):
             file_path = dir_path + 'database.txt'
             open(file_path, 'a').close()
 
-    db = Database(filepath=file_path)
-    return db
+    obj = Database(filepath=file_path)
+    return obj
 
 def open_db(file_path):
     if path.exists(file_path) and path.isfile(file_path):
-        db = Database(filepath=file_path)
-        return db
+        obj = Database(filepath=file_path)
+        return obj
     else:
         raise FileNotFoundError()
     
