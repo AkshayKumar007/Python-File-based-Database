@@ -16,7 +16,8 @@ class Database:
     def __init__(self, filepath) -> None:
         super().__init__()
         self.filename = filepath
-        self.file_no = open(filepath).fileno()
+        self.file_obj = open(filepath, 'wt')
+        self.file_no = self.file_obj.fileno()
         try:
             fcntl.lockf(self.file_no, fcntl.LOCK_EX)
             atexit.register(self.close_db)
@@ -37,24 +38,30 @@ class Database:
         del self.db
         fcntl.lockf(self.file_no, fcntl.LOCK_UN)
         self.f_obj.close()
-
-    def read(self): # read  data
-        pass
     
-    def read_key(self, key):
-        pass
+    def commit(self):
+        json.dump(self.db, self.file_obj)
+        return True
+
+    def read_db(self): # read  data
+        return self.db
+    
+    def read_by_key(self, key):
+        return self.db[key]
 
     def bulk_write(self, liz):
-        pass
+        for index in range(len(liz)):
+            for key in liz[index]:
+                self.db[key] = liz[index][key]
+    
+    def write(self, key, value):
+        self.db[key] = value
 
-    def write(self, data):
-        pass
-
-    def delete_key(self, key):
-        pass
-
+    def delete_by_key(self, key):
+        del self.db[key]
+        
     def delete_db(self):
-        pass
+        del self.db
 
 def create_db(dir_path=None):
     file_path = None
