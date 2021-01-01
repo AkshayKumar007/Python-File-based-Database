@@ -141,7 +141,3 @@ def open_db(file_path):
     else:
         raise FileNotFoundError()
     
-# refernces
-# https://stackoverflow.com/questions/2104080/how-can-i-check-file-size-in-python
-# https://stackoverflow.com/questions/10387501/python-get-size-of-an-object
-# https://www.programiz.com/python-programming/methods/built-in/hasattr#:~:text=Join-,Python%20hasattr(),false%20if%20it%20does%20not.&text=hasattr()%20is%20called%20by,to%20be%20raised%20or%20not.
