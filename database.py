@@ -109,7 +109,10 @@ class Database:
             raise TypeError('Object not serializable')
 
     def delete_by_key(self, key):
-        del self.db[key]
+        if self.db.get(key, None) != None:
+            del self.db[key]
+        else:
+            return False
         
     def delete_db(self):
         self.db = {}
