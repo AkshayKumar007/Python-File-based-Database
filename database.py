@@ -64,20 +64,26 @@ class Database:
         del self.db
 
 def create_db(dir_path=None):
-    file_path = None
+    
     if dir_path == None:
+        print('Inside None')
         file_path = path.expanduser('~') + '/database.txt'
+        open(file_path, 'wt').close()
+        obj = Database(filepath=file_path)
+        return obj
     else:
+        print('Inside else')
+        if dir_path[-1] != '/':
+             dir_path += '/'
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
-            if dir_path[-1] != '/':
-                dir_path += '/'
-
-            file_path = dir_path + 'database.txt'
-            open(file_path, 'a').close()
-
-    obj = Database(filepath=file_path)
-    return obj
+        
+        file_path = dir_path + 'database.txt'
+        print('here'+file_path)
+        open(file_path, 'wt').close()
+        obj = Database(filepath=file_path)
+        return obj
+            
 
 def open_db(file_path):
     if path.exists(file_path) and path.isfile(file_path):
