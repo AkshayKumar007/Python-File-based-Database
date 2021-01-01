@@ -1,1 +1,1 @@
-{"akshay": [1, "love", {"bsdk": "8008"}], "kumar": {"danske": [1, 2, 3]}}
+{"akshay": [1, "love", {"bsdk": "8008"}], "kumar": {"danske": [1, 2, 3]}, "lorem": ["ipsum", "dorm", 8008], "books": [7, "chetan thugut"], "obj": ["tea", "amo"]}
