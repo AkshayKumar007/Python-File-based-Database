@@ -1,3 +1,4 @@
+from genericpath import exists
 import os
 import json
 import fcntl  # for UNIX only
@@ -16,18 +17,20 @@ class Database:
     def __init__(self, filepath) -> None:
         super().__init__()
         self.filename = filepath
-        self.file_obj = open(filepath, 'wt')
+        
+        self.file_obj = open(filepath, 'r+')
+        print('yes')
         self.file_no = self.file_obj.fileno()
+        
         try:
             fcntl.lockf(self.file_no, fcntl.LOCK_EX)
             atexit.register(self.close_db)
         except OSError as e:
             raise PermissionError('File is being used by other process(es)')
 
-    def open_db(self): # opens file containg db
+    def load_db(self): # opens file containg db
         try:
-            self.f_obj = open(self.filename, 'w+')
-            self.db = json.load(self.f_obj)   
+            self.db = json.load(self.file_obj)   
         except ValueError as e:
             if path.getsize(self.filename) == 0:
                 self.db = {}
@@ -35,12 +38,15 @@ class Database:
                 raise ValueError('File is corrupted or not in JSON format.')
     
     def close_db(self): # for closing file and removing lock on file by process
-        del self.db
+        if hasattr(self, 'db'):
+            del self.db
         fcntl.lockf(self.file_no, fcntl.LOCK_UN)
-        self.f_obj.close()
+        print('Free resources')
     
     def commit(self):
-        json.dump(self.db, self.file_obj)
+        if path.getsize(self.filename) >= 1073741824:
+            raise db_size_limit_error
+        json.dump(self.db, open(self.filename, 'w+'))
         return True
 
     def read_db(self): # read  data
@@ -55,7 +61,16 @@ class Database:
                 self.db[key] = liz[index][key]
     
     def write(self, key, value):
-        self.db[key] = value
+        json_obj = json.dumps(value)
+        json_size = len(json_obj.encode('utf-8'))
+        if type(key) != str:
+            raise TypeError('Key Should be a string')
+        elif len(key) > 32:
+            raise key_char_limit_error
+        elif json_size > 16000:
+            raise json_size_limit_error
+        else:
+            self.db[key] = value
 
     def delete_by_key(self, key):
         del self.db[key]
@@ -66,21 +81,19 @@ class Database:
 def create_db(dir_path=None):
     
     if dir_path == None:
-        print('Inside None')
         file_path = path.expanduser('~') + '/database.txt'
-        open(file_path, 'wt').close()
+        open(file_path, 'w+').close()
         obj = Database(filepath=file_path)
         return obj
     else:
-        print('Inside else')
         if dir_path[-1] != '/':
              dir_path += '/'
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         
         file_path = dir_path + 'database.txt'
-        print('here'+file_path)
-        open(file_path, 'wt').close()
+        
+        open(file_path, 'w+').close()
         obj = Database(filepath=file_path)
         return obj
             
@@ -94,3 +107,5 @@ def open_db(file_path):
     
 # refernces
 # https://stackoverflow.com/questions/2104080/how-can-i-check-file-size-in-python
+# https://stackoverflow.com/questions/10387501/python-get-size-of-an-object
+# https://www.programiz.com/python-programming/methods/built-in/hasattr#:~:text=Join-,Python%20hasattr(),false%20if%20it%20does%20not.&text=hasattr()%20is%20called%20by,to%20be%20raised%20or%20not.
