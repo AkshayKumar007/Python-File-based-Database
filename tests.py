@@ -1,116 +1,48 @@
 import database
 
-# a work in progress
-
-
 class TestClass(object):
 
-    db = database.load('tests.db', auto_dump=False)
+    db = database.create_db('./tests')
 
-    def test_load(self):
-        x = database.load('x.db', auto_dump=False)
+    def test_createdb(self):
+        x = database.create_db('./x')
         assert x is not None
 
-    def test_sugar_get(self):
-        self.db.db["foo"] = "bar"
-        x = self.db["foo"]
-        assert x == "bar"
-
-    def test_sugar_set(self):
-        self.db["foo"] = "bar"
-        assert "bar" == self.db.db["foo"]
-
-    def test_sugar_rem(self):
-        self.db.db["foo"] = "bar"
-        del self.db["foo"]
-        assert "foo" not in self.db.db
-
-    def test_set(self):
-        self.db.set('key', 'value')
-        x = self.db.get('key')
-        assert x == 'value'
-
-    def test_getall(self):
-        self.db.deldb()
-        self.db.set('key1', 'value1')
-        self.db.set('key2', 'value2')
-        self.db.dcreate('dict1')
-        self.db.lcreate('list1')
-        x = self.db.getall()
-        y = dict.fromkeys(['key2', 'key1', 'dict1', 'list1']).keys()
-        assert x == y
-
-    def test_get(self):
-        self.db.set('key', 'value')
-        x = self.db.get('key')
-        assert x == 'value'
-
-    def test_rem(self):
-        self.db.set('key', 'value')
-        self.db.rem('key')
-        x = self.db.get('key')
-        assert x is False
-
-    def test_append(self):
-        self.db.set('key', 'value')
-        self.db.append('key', 'value')
-        x = self.db.get('key')
-        assert x == 'valuevalue'
-
-    def test_exists(self):
-        self.db.set('key', 'value')
-        x = self.db.exists('key')
+    def test_load(self):
+        x = self.db.load_db()
         assert x is True
-        self.db.rem('key')
 
-    def test_not_exists(self):
-        self.db.set('key', 'value')
-        x = self.db.exists('not_key')
-        assert x is False
-        self.db.rem('key')
-
-    def test_lexists(self):
-        self.db.lcreate('list')
-        self.db.ladd('list', 'value')
-        x = self.db.lexists('list', 'value')
+    def test_commit(self):
+        self.db.load_db()
+        self.db.write('key', 'value')
+        x = self.db.commit()
         assert x is True
-        self.db.lremlist('list')
 
-    def test_not_lexists(self):
-        self.db.lcreate('list')
-        self.db.ladd('list', 'value')
-        x = self.db.lexists('list', 'not_value')
+    def test_write(self):
+        self.db.load_db()
+        self.db.write('key3', 'value3')
+        self.db.commit()
+        x = self.db.read_by_key('key3')
+        assert x == 'value3'
+
+    def test_read(self):
+        self.db.load_db()
+        self.db.write('key2', 'value2')
+        self.db.commit()
+        x = self.db.read_by_key('key2')
+        assert x == 'value2'
+
+    def test_delete(self):
+        self.db.load_db()
+        self.db.write('key1', 'value1')
+        self.db.delete_by_key('key1')
+        self.db.commit()
+        x = self.db.read_by_key('key1')
         assert x is False
-        self.db.lremlist('list')
-
-    def test_lrange(self):
-        self.db.lcreate('list')
-        self.db.ladd('list','one')
-        self.db.ladd('list','two')
-        self.db.ladd('list','three')
-        self.db.ladd('list','four')
-        x = self.db.lrange('list', 1, 3)
-        assert x == ['two', 'three']
-        self.db.lremlist('list')
-
-    def test_dexists(self):
-        self.db.dcreate('dict')
-        self.db.dadd('dict', ('key', 'value'))
-        x = self.db.dexists('dict', 'key')
-        assert x is True
-        self.db.drem('dict')
-
-    def test_not_dexists(self):
-        self.db.dcreate('dict')
-        self.db.dadd('dict', ('key', 'value'))
-        x = self.db.dexists('dict', 'not_key')
-        assert x is False
-        self.db.drem('dict')
-
 
 if __name__ == "__main__":
     tests = TestClass()
     test_methods = [method for method in dir(tests) if callable(getattr(tests, method)) if method.startswith('test_')]
     for method in test_methods:
-            getattr(tests, method)()  # run method
-            print(".", end="")
+        getattr(tests, method)()
+        print(".", end="")

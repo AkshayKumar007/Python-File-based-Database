@@ -30,14 +30,19 @@ class Database:
             raise PermissionError('File is being used by other process(es)')
 
     def load_db(self):  # opens file containg db
-        try:
-            self.db = json.load(self.file_obj)   
-        except ValueError as e:
-            if path.getsize(self.filename) == 0:
-                self.db = {}
-            else:
-                raise ValueError('File is corrupted or not in JSON format.')
-    
+        if not hasattr(self, 'db'):
+            try:
+                self.db = json.load(self.file_obj)
+                return True
+            except ValueError as e:
+                if path.getsize(self.filename) == 0:
+                    self.db = {}
+                    return True
+                else:
+                    raise ValueError('File is corrupted or not in JSON format.')
+        else:
+            return True
+
     def close_db(self):  # for closing file and removing lock on file by process
         if hasattr(self, 'db'):
             del self.db
@@ -54,25 +59,27 @@ class Database:
         return self.db
     
     def read_by_key(self, key):
-        obj = json.loads(self.db[key])
-        if obj.get('time-to-live', None) != None:
-            ttl = obj['time-to-live']
-            now = int(datetime.datetime.now().timestamp())
-            
-            if int((now - ttl) > 0):
-                self.delete_by_key(key)
-                self.commit()
-                raise KeyError('Key not found')
-            else:
-                return obj['value']
-
+        try:
+            obj = json.loads(self.db[key])
+            if obj.get('time-to-live', None) != None:
+                ttl = obj['time-to-live']
+                now = int(datetime.datetime.now().timestamp())
+                
+                if int((now - ttl) > 0):
+                    self.delete_by_key(key)
+                    self.commit()
+                    
+                else:
+                    return obj['value']
+        except:
+            return False
     def bulk_write(self, liz):
         for index in range(len(liz)):
             for key in liz[index]:
                 self.write(key, liz[index][key])
     
     def write(self, key, value):
-        choice = input('Include Time to Live(Y/n)?')
+        choice = input('Include Time to Live(Y/n)?\t')
         if choice == 'Y' or 'y':
             date_entry = input('Enter a date in YYYY-MM-DD-HH-MM format:\t')
             time_to_live = datetime.datetime.strptime(date_entry, '%Y-%m-%d-%H-%M')
@@ -99,7 +106,7 @@ class Database:
                 else:
                     self.db[key] = json_obj
 
-        except:
+        except Exception as e:
             raise TypeError('Object not serializable')
 
     def delete_by_key(self, key):
