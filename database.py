@@ -54,13 +54,19 @@ class Database:
         return self.db
     
     def read_by_key(self, key):
+        if self.db[key].get('time-to-live', None) != None:
+            ttl = self.db[key]['time-to-live']
+            now = datetime.datetime.now().utcfromtimestamp(0)
+            if int((now - ttl).total_seconds() > 0):
+                self.delete_by_key(key)
+                raise KeyError('Key not found')
+            else:
+                return self.db[key]['value']
 
-        return self.db[key]
-
-    def bulk_write(self, liz, time_to_live=None):
+    def bulk_write(self, liz):
         for index in range(len(liz)):
             for key in liz[index]:
-                self.write(key, liz[index][key], time_to_live)
+                self.write(key, liz[index][key])
     
     def write(self, key, value):
         choice = input('Include Time to Live(Y/n)?')
@@ -68,7 +74,7 @@ class Database:
             date_entry = input('Enter a date in YYYY-MM-DD-HH-MM format:\t')
             time_to_live = datetime.datetime.strptime(date_entry, '%Y-%m-%d-%H-%M')
             epoch = datetime.datetime.utcfromtimestamp(0)
-            time_to_live = (time_to_live - epoch).total_seconds()
+            time_to_live = int((time_to_live - epoch).total_seconds())
         else:
             time_to_live = None
         try:
