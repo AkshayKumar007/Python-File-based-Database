@@ -15,7 +15,6 @@ json_size_limit_error = MemoryError('JSON size exceeded 16KB')
 db_size_limit_error = MemoryError('File size reached 1GB. Try creating a new Database instance')
 
 class Database:
-    # data members = db, filename, dthread, auto_dump, loco
     def __init__(self, filepath) -> None:
         super().__init__()
         self.filename = filepath
