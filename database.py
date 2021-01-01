@@ -26,7 +26,7 @@ class Database:
         try:
             fcntl.lockf(self.file_no, fcntl.LOCK_EX)
             atexit.register(self.close_db)
-        except OSError as e:
+        except:
             raise PermissionError('File is being used by other process(es)')
 
     def load_db(self):  # opens file containg db
@@ -54,14 +54,17 @@ class Database:
         return self.db
     
     def read_by_key(self, key):
-        if self.db[key].get('time-to-live', None) != None:
-            ttl = self.db[key]['time-to-live']
-            now = datetime.datetime.now().utcfromtimestamp(0)
-            if int((now - ttl).total_seconds() > 0):
+        obj = json.loads(self.db[key])
+        if obj.get('time-to-live', None) != None:
+            ttl = obj['time-to-live']
+            now = int(datetime.datetime.now().timestamp())
+            
+            if int((now - ttl) > 0):
                 self.delete_by_key(key)
+                self.commit()
                 raise KeyError('Key not found')
             else:
-                return self.db[key]['value']
+                return obj['value']
 
     def bulk_write(self, liz):
         for index in range(len(liz)):
